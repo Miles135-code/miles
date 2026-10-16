@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Miles</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{--bg:#04101c;--c:#18e0ff;--c2:#8a5cff;--t:#dff7ff;--m:#6f95a8;--b:rgba(24,224,255,.2);--ok:#2dffa8;--warn:#ffb629;--bad:#ff4d6d}
+body.listen{--c:#18e0ff}body.armed{--c:#2dffa8}body.muted{--c:#ff4d6d}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{font:15px/1.5 "Segoe UI",system-ui,sans-serif;background:radial-gradient(circle at 15% 0,#0d2b44,var(--bg) 60%);color:var(--t);display:flex;overflow:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.1;background:linear-gradient(var(--c) 1px,transparent 1px) 0 0/44px 44px,linear-gradient(90deg,var(--c) 1px,transparent 1px) 0 0/44px 44px}
+.glass{background:rgba(255,255,255,.05);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--b);border-radius:16px;padding:16px;box-shadow:0 0 28px rgba(24,224,255,.07)}
+nav{width:92px;padding:14px 8px;display:flex;flex-direction:column;gap:6px;border-right:1px solid var(--b);background:rgba(4,16,28,.7);z-index:2}
+nav b{text-align:center;font-size:18px;letter-spacing:3px;color:var(--c);text-shadow:0 0 12px var(--c);margin-bottom:10px}
+nav button{background:none;border:1px solid transparent;color:var(--m);padding:10px 4px;border-radius:12px;cursor:pointer;font-size:12px;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button i{font-style:normal;font-size:20px}
+nav button.on{color:var(--c);border-color:var(--b);background:rgba(24,224,255,.08);box-shadow:0 0 14px rgba(24,224,255,.2)}
+main{flex:1;overflow:auto;padding:22px;position:relative}
+section{max-width:900px;margin:auto;display:grid;gap:14px}
+section[hidden]{display:none}
+h2{font-weight:300;font-size:24px;letter-spacing:1px}
+button,input,textarea,select{font:inherit;color:var(--t);background:rgba(255,255,255,.07);border:1px solid var(--b);border-radius:10px;padding:8px 12px}
+button{cursor:pointer}button:hover{border-color:var(--c);box-shadow:0 0 10px rgba(24,224,255,.3)}
+button.go{background:linear-gradient(90deg,var(--c2),var(--c));border:0;color:#02131f;font-weight:600}
+button.on{border-color:var(--c);color:var(--c)}
+input,textarea{width:100%}textarea{min-height:80px;resize:vertical}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row>input{flex:1;min-width:140px}
+.item{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 14px}
+.item small,.m{color:var(--m);display:block;font-size:12px}
+.done .tx{text-decoration:line-through;opacity:.5}
+.pill{font-size:12px;padding:2px 10px;border-radius:99px;border:1px solid var(--b);cursor:pointer;background:none}
+.high{color:var(--bad)}.medium{color:var(--warn)}.low{color:var(--ok)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.stats div{text-align:center}.stats strong{display:block;font-size:30px;font-weight:300;color:var(--c)}
+.hud{position:relative;width:220px;height:220px;margin:6px auto}
+.ring{position:absolute;inset:0;border-radius:50%;border:2px dashed var(--c);opacity:.6;animation:spin 16s linear infinite}
+.r2{inset:20px;border:2px dotted var(--c2);animation-duration:9s;animation-direction:reverse}
+.r3{inset:42px;border:1px solid var(--c);border-top-color:transparent;border-bottom-color:transparent;animation-duration:5s}
+.core{position:absolute;inset:70px;border-radius:50%;background:radial-gradient(circle,#fff,var(--c) 35%,transparent 72%);animation:pulse 3s ease-in-out infinite}
+body.armed .core{animation-duration:.8s}body.muted .core{animation:none;opacity:.35}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{50%{transform:scale(1.25);opacity:.75}}
+#clock{font-size:42px;font-weight:200;text-align:center;letter-spacing:4px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c);box-shadow:0 0 10px var(--c);margin-right:8px}
+.say{border-left:2px solid var(--c);padding-left:10px;margin-top:8px}.say em{font-style:normal;color:var(--c)}
+#login{position:fixed;inset:0;z-index:9;display:grid;place-items:center;background:rgba(4,16,28,.92);padding:16px}
+#login .glass{max-width:400px;width:100%;display:grid;gap:12px}
+#login h1{font-weight:200;letter-spacing:8px;color:var(--c);text-align:center;text-shadow:0 0 18px var(--c)}
+#toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%);padding:8px 16px;z-index:10;display:none}
+@media(max-width:720px){body{flex-direction:column-reverse}nav{width:100%;flex-direction:row;border:0;border-top:1px solid var(--b);padding:4px}nav b{display:none}nav button{flex:1;font-size:11px;padding:6px 0}main{padding:14px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style></head>
+<body class="idle">
+<div id="login"><div class="glass">
+<h1>MILES</h1><p class="m" style="text-align:center">Personal AI operating system. Sign in with Google to load your memory from Drive.</p>
+<input id="cid" placeholder="Google OAuth Web Client ID">
+<button class="go" id="connect">Connect Google Drive</button>
+<button id="offline">Preview without Drive (nothing is saved)</button>
+</div></div>
+
+<nav><b>MILES</b>
+<button data-v="home" class="on"><i>◈</i>Home</button>
+<button data-v="memory"><i>▤</i>Memory</button>
+<button data-v="tasks"><i>✓</i>Tasks</button>
+<button data-v="voice"><i>◉</i>Voice</button>
+<button data-v="settings"><i>⚙</i>Settings</button></nav>
+
+<main>
+<section id="home">
+<div class="glass"><div class="hud"><div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div><div class="core"></div></div>
+<div id="clock"></div><p class="m" style="text-align:center" id="state"></p></div>
+<div class="stats glass"><div><strong id="sN">0</strong>notes</div><div><strong id="sT">0</strong>open tasks</div><div><strong id="sC">0</strong>commands</div><div><strong id="sync" style="font-size:16px;padding:12px 0">offline</strong>Drive</div></div>
+<div class="glass"><span class="m">Latest exchange</span><div id="last" class="say">Say “jarvis” to begin.</div></div>
+</section>
+
+<section id="memory" hidden>
+<h2>Memory</h2>
+<div class="glass"><textarea id="ntext" placeholder="Write a note…"></textarea>
+<div class="row" style="margin-top:8px"><button class="go" id="nsave">Save note</button><button id="ncancel" hidden>Cancel</button></div></div>
+<input id="nsearch" placeholder="Search notes…">
+<div id="nlist" style="display:grid;gap:8px"></div>
+</section>
+
+<section id="tasks" hidden>
+<h2>Tasks</h2>
+<div class="glass row"><input id="ttext" placeholder="New task…"><select id="tprio"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select><button class="go" id="tadd">Add task</button></div>
+<div id="tlist" style="display:grid;gap:8px"></div>
+</section>
+
+<section id="voice" hidden>
+<h2>Voice console</h2>
+<div class="glass"><p><span class="dot"></span><span id="vstate"></span></p>
+<div class="row" style="margin-top:10px"><button id="bListen">Listening: off</button><button id="bPtt">Push to talk</button><button id="bMute">Mute</button></div>
+<div class="row" style="margin-top:10px"><input id="vtype" placeholder="Or type a command, e.g. add note blockchain idea"><button id="vsend">Run</button></div></div>
+<div id="hist" style="display:grid;gap:8px"></div>
+</section>
+
+<section id="settings" hidden>
+<h2>Settings</h2>
+<div class="glass" style="display:grid;gap:10px">
+<label>Wake word<input id="sWake"></label>
+<label>Voice<select id="sVoice"></select></label>
+<label>Speech rate<input id="sRate" type="range" min=".6" max="1.6" step=".1"></label>
+<label class="row"><input id="sAuto" type="checkbox" style="width:auto">Start listening after sign-in</label>
+<div class="row"><button id="bReload">Reload from Drive</button><button id="bClear">Clear command history</button><button id="bOut">Sign out</button></div></div>
+</section>
+</main>
+<div id="toast" class="glass"></div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const D='https://www.googleapis.com/drive/v3',U='https://www.googleapis.com/upload/drive/v3';
+const DEF=()=>({notes:[],tasks:[],research:[],settings:{wake:'jarvis',voice:'',rate:1,auto:true},conversations:[]});
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const cap=s=>s[0].toUpperCase()+s.slice(1),PR={high:0,medium:1,low:2};
+let M=DEF(),tok,tc,fid,cloud=false,editing=null,st;
+
+/* ---------- toast / nav ---------- */
+function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(e.t);e.t=setTimeout(()=>e.style.display='none',3500)}
+function go(v){$$('section').forEach(s=>s.hidden=s.id!=v);$$('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v==v))}
+$$('nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
+
+/* ---------- Google auth + Drive ---------- */
+const getToken=p=>new Promise((ok,no)=>{tc.callback=r=>r.error?no(r):(tok=r.access_token,ok(tok));tc.requestAccessToken({prompt:p})});
+async function api(url,o={},retry=1){o.headers={...o.headers,Authorization:'Bearer '+tok};
+  const r=await fetch(url,o);
+  if(r.status==401&&retry){await getToken('');return api(url,o,0)}
+  if(!r.ok)throw new Error('Drive '+r.status);return r}
+function sync(s){$('#sync').textContent=s;$('#sync').style.color=s=='error'?'var(--bad)':s=='synced'?'var(--ok)':''}
+
+async function loadMemory(){
+  const q=encodeURIComponent("name='jarvis-data.json' and trashed=false");
+  fid=((await(await api(`${D}/files?q=${q}&fields=files(id)`)).json()).files[0]||{}).id;
+  if(fid)M={...DEF(),...await(await api(`${D}/files/${fid}?alt=media`)).json()};
+  else await saveMemory(true);
+  sync('synced')}
+function saveMemory(now){
+  if(!cloud)return Promise.resolve();clearTimeout(st);
+  return new Promise(res=>{st=setTimeout(async()=>{try{sync('saving');
+    const body=JSON.stringify(M);
+    if(fid)await api(`${U}/files/${fid}?uploadType=media`,{method:'PATCH',headers:{'Content-Type':'application/json'},body});
+    else{const b='milesb',mp=`--${b}\r\nContent-Type: application/json\r\n\r\n{"name":"jarvis-data.json","mimeType":"application/json"}\r\n--${b}\r\nContent-Type: application/json\r\n\r\n${body}\r\n--${b}--`;
+      fid=(await(await api(`${U}/files?uploadType=multipart&fields=id`,{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+b},body:mp})).json()).id}
+    sync('synced')}catch(e){sync('error');toast('Drive save failed: '+e.message)}res()},now?0:600)})}
+const addMem=(c,o)=>{Object.assign(o,{id:uid(),at:Date.now()});M[c].unshift(o);saveMemory();render();return o};
+const editMem=(c,id,p)=>{const o=M[c].find(x=>x.id==id);if(o){Object.assign(o,p,{upd:Date.now()});saveMemory();render()}return o};
+const delMem=(c,id)=>{M[c]=M[c].filter(x=>x.id!=id);saveMemory();render()};
+
+async function start(){$('#login').hidden=true;fillSettings();render();
+  say('Systems online. Memory loaded.');if(M.settings.auto)listen(true)}
+$('#connect').onclick=async()=>{
+  const id=$('#cid').value.trim()||localStorage.mcid;
+  if(!id)return toast('Paste your Google OAuth Client ID first.');
+  if(!window.google)return toast('Google sign-in script not loaded. Check your connection.');
+  localStorage.mcid=id;
+  tc=google.accounts.oauth2.initTokenClient({client_id:id,scope:'https://www.googleapis.com/auth/drive.file',callback:()=>{}});
+  try{await getToken('consent');cloud=true;await loadMemory();start()}catch(e){toast('Sign-in failed: '+(e.error||e.message))}};
+$('#offline').onclick=()=>{cloud=false;start()};
+$('#cid').value=localStorage.mcid||'';
+
+/* ---------- speech out / in ---------- */
+let rec,listening=false,muted=false,ptt=false,armed=0,speaking=false;
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+function say(t){if(muted||!window.speechSynthesis)return;speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(t),v=speechSynthesis.getVoices().find(v=>v.name==M.settings.voice);
+  if(v)u.voice=v;u.rate=M.settings.rate;u.onstart=()=>speaking=true;u.onend=u.onerror=()=>speaking=false;speechSynthesis.speak(u)}
+function startRec(){if(!SR){toast('Speech recognition is not supported here. Use Chrome, Edge or Safari, or type commands.');return false}
+  if(!rec){rec=new SR();rec.continuous=true;rec.interimResults=false;rec.lang='en-US';
+    rec.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)hear(e.results[i][0].transcript)};
+    rec.onend=()=>{rec.on=false;if(listening||ptt)setTimeout(startRec,300)};
+    rec.onerror=e=>{if(e.error=='not-allowed'||e.error=='service-not-allowed'){listening=ptt=false;toast('Microphone access is blocked. Allow it in your browser settings.');ui()}}}
+  if(!rec.on)try{rec.start();rec.on=true}catch(e){}return true}
+function listen(on){listening=on;if(on&&!startRec())listening=false;if(!on&&!ptt)rec&&rec.stop();ui()}
+function ui(){const s=muted?'muted':(ptt||Date.now()<armed)?'armed':listening?'listen':'idle';
+  document.body.className=s;
+  const t={muted:'Muted',armed:'Awaiting your command',listen:`Listening for “${M.settings.wake}”`,idle:'Voice standby'}[s];
+  $('#vstate').textContent=t;$('#state').textContent=t;
+  $('#bListen').textContent='Listening: '+(listening?'on':'off');$('#bListen').classList.toggle('on',listening);
+  $('#bMute').textContent=muted?'Unmute':'Mute';$('#bMute').classList.toggle('on',muted)}
+function hear(raw){if(speaking||muted)return;
+  const t=raw.toLowerCase().trim(),w=M.settings.wake.toLowerCase(),i=t.indexOf(w);
+  if(i>=0){const c=t.slice(i+w.length).replace(/^[\s,.:!?]+/,'');
+    if(c)run(c,raw);else{armed=Date.now()+10000;say('Yes?');setTimeout(ui,10100);ui()}}
+  else if(ptt||Date.now()<armed){const p=ptt;ptt=false;armed=0;run(t,raw);if(p&&!listening)rec.stop()}}
+$('#bListen').onclick=()=>listen(!listening);
+$('#bPtt').onclick=()=>{if(startRec()){ptt=true;ui()}};
+$('#bMute').onclick=()=>{muted=!muted;if(muted)speechSynthesis.cancel();ui()};
+$('#vsend').onclick=()=>{const v=$('#vtype').value.trim();if(v){$('#vtype').value='';run(v.toLowerCase().replace(new RegExp('^'+M.settings.wake+'[\\s,]*','i'),''),v)}};
+$('#vtype').onkeydown=e=>e.key=='Enter'&&$('#vsend').click();
+
+/* ---------- commands ---------- */
+const openTask=q=>M.tasks.find(t=>!t.done&&t.text.toLowerCase().includes(q));
+const anyTask=q=>M.tasks.find(t=>t.text.toLowerCase().includes(q));
+function parse(t){let m;t=t.replace(/[.!?]+$/,'').trim();
+  if(m=t.match(/^(?:add|save|create|take|make)(?: a)? note(?: that| to)?\s+(.+)/)){addMem('notes',{text:cap(m[1])});return 'I have saved your note.'}
+  if(/^(?:show|list|read)(?: my)?(?: all)? notes?$/.test(t)){go('memory');return M.notes.length?`You have ${M.notes.length} notes. Latest: ${M.notes[0].text}`:'You have no notes yet.'}
+  if(m=t.match(/^(?:search|find)(?: notes?)?(?: for)?\s+(.+)/)){go('memory');$('#nsearch').value=m[1];render();
+    const n=M.notes.filter(x=>x.text.toLowerCase().includes(m[1])).length;return `I found ${n} matching ${n==1?'note':'notes'}.`}
+  if(m=t.match(/^(?:delete|remove)(?: the)?(?: (?:last|latest))? note(?: (.+))?$/)){
+    const n=m[1]?M.notes.find(x=>x.text.toLowerCase().includes(m[1])):M.notes[0];
+    if(!n)return 'I could not find that note.';delMem('notes',n.id);return 'Note deleted.'}
+  if(m=t.match(/^add (?:a )?(?:(high|medium|low)[ -]priority )?task(?: to)?\s+(.+?)(?: with (high|medium|low) priority)?$/)){
+    addMem('tasks',{text:cap(m[2]),priority:m[1]||m[3]||'medium',done:false});return `Task added with ${m[1]||m[3]||'medium'} priority.`}
+  if(m=t.match(/^(?:complete|finish)(?: task)?\s+(.+)/)){const k=openTask(m[1]);if(!k)return 'I could not find that task.';editMem('tasks',k.id,{done:true});return 'Task completed.'}
+  if(m=t.match(/^(?:delete|remove) task\s+(.+)/)){const k=anyTask(m[1]);if(!k)return 'I could not find that task.';delMem('tasks',k.id);return 'Task deleted.'}
+  if((m=t.match(/^(?:set )?priority(?: of| for)?(?: task)?\s+(.+?)\s+(?:to\s+)?(high|medium|low)$/))||(m=t.match(/^make (.+?) (high|medium|low) priority$/))){
+    const k=anyTask(m[1]);if(!k)return 'I could not find that task.';editMem('tasks',k.id,{priority:m[2]});return `Priority set to ${m[2]}.`}
+  if(/^(?:show|list|read)(?: my)? tasks?$/.test(t)){go('tasks');const o=M.tasks.filter(x=>!x.done).sort((a,b)=>PR[a.priority]-PR[b.priority]);
+    return o.length?`You have ${o.length} open tasks. Top priority: ${o[0].text}`:'You have no open tasks.'}
+  if(m=t.match(/^(?:go to|open|show)(?: the)?\s+(home|memory|notes|tasks|voice|settings)/)){go(m[1]=='notes'?'memory':m[1]);return `Opening ${m[1]}.`}
+  if(t=='stop listening'){listen(false);return 'Listening stopped.'}
+  return null}
+function run(cmd,raw){const r=parse(cmd)||'Sorry, I do not know that command yet.';
+  M.conversations.unshift({id:uid(),at:Date.now(),said:raw,reply:r});M.conversations.length=Math.min(M.conversations.length,100);
+  saveMemory();say(r);render()}
+
+/* ---------- render ---------- */
+function render(){
+  const q=$('#nsearch').value.toLowerCase(),ns=M.notes.filter(n=>n.text.toLowerCase().includes(q));
+  $('#nlist').innerHTML=ns.map(n=>`<div class="glass item"><div class="tx">${esc(n.text)}<small>${new Date(n.upd||n.at).toLocaleString()}</small></div><span class="row"><button data-a="ne" data-id="${n.id}">Edit</button><button data-a="nd" data-id="${n.id}">Delete</button></span></div>`).join('')||'<p class="m">No notes found. Write one above.</p>';
+  const ts=[...M.tasks].sort((a,b)=>a.done-b.done||PR[a.priority]-PR[b.priority]);
+  $('#tlist').innerHTML=ts.map(t=>`<div class="glass item ${t.done?'done':''}"><div class="tx">${esc(t.text)}</div><span class="row"><button class="pill ${t.priority}" data-a="tp" data-id="${t.id}">${t.priority}</button><button data-a="tc" data-id="${t.id}">${t.done?'Reopen':'Complete'}</button><button data-a="td" data-id="${t.id}">Delete</button></span></div>`).join('')||'<p class="m">No tasks. Add one above.</p>';
+  $('#hist').innerHTML=M.conversations.map(c=>`<div class="glass"><small class="m">${new Date(c.at).toLocaleString()}</small><div>You: ${esc(c.said)}</div><div class="say"><em>Miles:</em> ${esc(c.reply)}</div></div>`).join('')||'<p class="m">No commands yet. Say “jarvis” followed by a command.</p>';
+  $('#sN').textContent=M.notes.length;$('#sT').textContent=M.tasks.filter(t=>!t.done).length;$('#sC').textContent=M.conversations.length;
+  const c=M.conversations[0];if(c)$('#last').innerHTML=`${esc(c.said)}<br><em>Miles:</em> ${esc(c.reply)}`;ui()}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const id=b.dataset.id,a=b.dataset.a;
+  if(a=='ne'){editing=id;$('#ntext').value=M.notes.find(n=>n.id==id).text;$('#ncancel').hidden=false;$('#ntext').focus()}
+  if(a=='nd')delMem('notes',id);if(a=='td')delMem('tasks',id);
+  if(a=='tc'){const t=M.tasks.find(x=>x.id==id);editMem('tasks',id,{done:!t.done})}
+  if(a=='tp'){const t=M.tasks.find(x=>x.id==id);editMem('tasks',id,{priority:['high','medium','low'][(PR[t.priority]+1)%3]})}});
+$('#nsave').onclick=()=>{const v=$('#ntext').value.trim();if(!v)return;editing?editMem('notes',editing,{text:v}):addMem('notes',{text:v});$('#ncancel').onclick()};
+$('#ncancel').onclick=()=>{editing=null;$('#ntext').value='';$('#ncancel').hidden=true};
+$('#nsearch').oninput=render;
+$('#tadd').onclick=()=>{const v=$('#ttext').value.trim();if(!v)return;addMem('tasks',{text:v,priority:$('#tprio').value,done:false});$('#ttext').value=''};
+$('#ttext').onkeydown=e=>e.key=='Enter'&&$('#tadd').click();
+
+/* ---------- settings ---------- */
+function fillSettings(){const s=M.settings;$('#sWake').value=s.wake;$('#sRate').value=s.rate;$('#sAuto').checked=s.auto;
+  $('#sVoice').innerHTML='<option value="">Default</option>'+speechSynthesis.getVoices().map(v=>`<option ${v.name==s.voice?'selected':''}>${esc(v.name)}</option>`).join('')}
+speechSynthesis.onvoiceschanged=fillSettings;
+$('#sWake').onchange=e=>{M.settings.wake=(e.target.value.trim()||'jarvis').toLowerCase();saveMemory();ui()};
+$('#sVoice').onchange=e=>{M.settings.voice=e.target.value;saveMemory()};
+$('#sRate').onchange=e=>{M.settings.rate=+e.target.value;saveMemory()};
+$('#sAuto').onchange=e=>{M.settings.auto=e.target.checked;saveMemory()};
+$('#bReload').onclick=async()=>{if(!cloud)return toast('Not connected to Drive.');try{await loadMemory();fillSettings();render();toast('Memory reloaded.')}catch(e){toast(e.message)}};
+$('#bClear').onclick=()=>{M.conversations=[];saveMemory();render()};
+$('#bOut').onclick=()=>{listen(false);if(tok&&window.google)google.accounts.oauth2.revoke(tok);location.reload()};
+setInterval(()=>$('#clock').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}),1000);
+ui();
+</script></body></html>
